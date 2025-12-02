@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: cu-ms-payments
-          image: susanar1/cu-ms-payments:1
+          image: susanar1/cu-ms-payments:3
           ports:
             - containerPort: 3000
           resources:
