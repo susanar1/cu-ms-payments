@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
         - name: cu-ms-payments
-          image: susanar1/cu-ms-payments:3
+          image: susanar1/cu-ms-payments:{{ imageTag }}
           ports:
             - containerPort: 3000
           resources:
