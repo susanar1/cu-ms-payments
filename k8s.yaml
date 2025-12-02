@@ -1,0 +1,104 @@
+
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: microservicio
+#spec:
+#  containers:
+#    - name: hola-mundo
+#      image: hoverdev/hola-mundo:4
+#      ports:
+#        - containerPort: 3000
+#Deployment maneja pods y replica sets
+apiVersion: apps/v1
+kind: Deployment  
+metadata:
+  namespace: susanarodas-dev
+  name: cu-ms-payments
+  labels:
+    app: cu-ms-payments
+    areanegocio: pagos
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cu-ms-payments
+  template:
+    metadata:
+      labels:
+        app: cu-ms-payments
+    spec:
+      containers:
+        - name: cu-ms-payments
+          image: susanar1/cu-ms-payments:1
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "300m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: cu-ms-payments
+            - secretRef:
+                name: cu-ms-payments
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: susanarodas-dev
+  name: cu-ms-payments
+spec:
+  selector:
+    app: cu-ms-payments
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: susanarodas-dev
+  name: cu-ms-payments
+data:
+  LOG_LEVEL: debug
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: susanarodas-dev
+  name: cu-ms-payments
+data:
+  DATABASE_PASSWORD: U3VwZXJTZWd1cm8yMDI1
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  namespace: susanarodas-dev
+  name: cu-ms-payments
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cu-ms-payments
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization ## EN BASE AL REQUEST
+          averageUtilization: 90
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization ## EN BASE AL REQUEST
+          averageUtilization: 90
+
+            

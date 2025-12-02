@@ -1,0 +1,27 @@
+name: docker build
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  my_job:
+    name: deploy to dockerhub
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docker Login
+        uses: docker/login-action@v3.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          
+      - name: Construye Imagen
+        run: |
+          echo "Building Docker image..."
+          docker build -t susanar1/hola-mundo2:${{ github.run_number }} .
+      - name: Pushea Imagen
+        run: |
+          echo "Pushing Docker image..."
+          docker push susanar1/hola-mundo2:${{ github.run_number }}
+          
