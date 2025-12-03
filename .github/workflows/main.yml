@@ -42,6 +42,5 @@ jobs:
 
       - name: Deploy to OpenShift
         run: |
-          oc apply -f k8s.yaml
-          
-
+          sed -i 's/{{ imageTag }}/${{ github.run_number }}/g' k8s.yaml
+          oc apply -f k8s.yaml          
