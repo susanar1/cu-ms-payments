@@ -45,6 +45,33 @@ spec:
                 name: cu-ms-payments
             - secretRef:
                 name: cu-ms-payments
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 3000
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 3000
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 3000
+            failureThreshold: 3
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+            initialDelaySeconds: 5
 ---
 apiVersion: v1
 kind: Service
