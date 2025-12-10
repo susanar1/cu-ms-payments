@@ -1,9 +1,12 @@
 # IMAGEN BASE
-FROM python:3.14-alpine
+FROM python:3.11-slim
  
 # INSTRUCCIONES
 WORKDIR /app
- 
+
+# sirve para conectarse a una BD PostgreSQL
+RUN pip install psycopg2-binary
+
 # Copiar el archivo de la aplicación
 COPY app.py .
  
