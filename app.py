@@ -49,13 +49,7 @@ def init_database():
         cursor = conn.cursor()
         
         # Verificar si la tabla existe y tiene registros
-        cursor.execute("""
-            SELECT COUNT(*) FROM information_schema.tables 
-            WHERE table_name = 'users'
-        """)
-        table_exists = cursor.fetchone()[0] > 0
-        
-        if table_exists:
+        try:
             cursor.execute("SELECT COUNT(*) FROM users")
             record_count = cursor.fetchone()[0]
             if record_count > 0:
@@ -63,6 +57,9 @@ def init_database():
                 cursor.close()
                 conn.close()
                 return
+        except psycopg2.Error:
+            # La tabla no existe, procederemos a crearla
+            pass
         
         # Crear tabla si no existe
         cursor.execute("""
@@ -72,17 +69,23 @@ def init_database():
             )
         """)
         
-        # Insertar 5 registros con nombres aleatorios
-        nombres_seleccionados = random.sample(NOMBRES, 5)
-        for nombre in nombres_seleccionados:
-            cursor.execute("INSERT INTO users (name) VALUES (%s)", (nombre,))
+        # Verificar nuevamente si hay registros (por si acaso)
+        cursor.execute("SELECT COUNT(*) FROM users")
+        record_count = cursor.fetchone()[0]
+        
+        if record_count == 0:
+            # Insertar 5 registros con nombres aleatorios
+            nombres_seleccionados = random.sample(NOMBRES, 5)
+            for nombre in nombres_seleccionados:
+                cursor.execute("INSERT INTO users (name) VALUES (%s)", (nombre,))
+            print(f"Tabla 'users' inicializada con 5 registros", file=sys.stdout)
         
         conn.commit()
-        print(f"Tabla 'users' inicializada con 5 registros", file=sys.stdout)
         cursor.close()
         conn.close()
     except Exception as e:
         print(f"Error al inicializar la base de datos: {str(e)}", file=sys.stderr)
+        sys.stderr.flush()
 
 def get_users():
     """Conecta a PostgreSQL y obtiene los usuarios"""
@@ -98,12 +101,38 @@ def get_users():
             password=DB_PASSWORD
         )
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name FROM users")
-        rows = cursor.fetchall()
-        users = [{"id": row[0], "name": row[1]} for row in rows]
-        cursor.close()
-        conn.close()
-        return {"users": users}
+        
+        try:
+            cursor.execute("SELECT id, name FROM users")
+            rows = cursor.fetchall()
+            users = [{"id": row[0], "name": row[1]} for row in rows]
+            cursor.close()
+            conn.close()
+            return {"users": users}
+        except psycopg2.Error as e:
+            # Si la tabla no existe, intentar crearla
+            if "relation" in str(e) and "does not exist" in str(e):
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS users (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL
+                    )
+                """)
+                # Insertar 5 registros con nombres aleatorios
+                nombres_seleccionados = random.sample(NOMBRES, 5)
+                for nombre in nombres_seleccionados:
+                    cursor.execute("INSERT INTO users (name) VALUES (%s)", (nombre,))
+                conn.commit()
+                
+                # Obtener los usuarios recién creados
+                cursor.execute("SELECT id, name FROM users")
+                rows = cursor.fetchall()
+                users = [{"id": row[0], "name": row[1]} for row in rows]
+                cursor.close()
+                conn.close()
+                return {"users": users}
+            else:
+                return {"error": str(e)}
     except Exception as e:
         return {"error": str(e)}
 
